@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 591486f465dff4947b08d99c24e25081, type: 3}
   m_Name: Send
   m_EditorClassIdentifier: 
-  FloorType: 2
-  MaxSpeed: 1
-  FrictionMultiplier: 1
+  Slowing: 3
+  SlipAngle: 45
+  SharpnessOnGround: 10

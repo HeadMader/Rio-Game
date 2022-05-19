@@ -16,13 +16,6 @@ public class PlayerController : MonoBehaviour
 	[Range(0.1f, 1f)]
 	public float _rotationMultiplier = 0.4f;
 
-	[Header("Camera")]
-	[SerializeField] internal Camera playerCamera;
-	[SerializeField] private Transform camTarget;
-	[SerializeField] private float minCameraRotaation = -180;
-	[SerializeField] private float maxCameraRotaation = 180;
-
-
 	[Header("Jump")]
 	public float jumpForce = 9f;
 
@@ -43,10 +36,10 @@ public class PlayerController : MonoBehaviour
 	private Surface surface;
 	private float lastTimeJumped = 0f;
 	public float groundCheckDistance;
-	private float CamTargetXRot = 0;
 	const float k_JumpGroundingPreventionTime = 0.2f;
 	const float k_GroundCheckDistanceInAir = 0.07f;
 	private bool isVisible;
+	private Vector3 SnowballVelocity;
 	#region Init
 	private void Awake()
 	{
@@ -69,14 +62,7 @@ public class PlayerController : MonoBehaviour
 	{
 
 		GroundCheck();
-		Debug.Log(isGrounded);
 		HandleCharacterMovement();
-
-		//	if (Input.GetKeyDown(KeyCode.Escape))
-		//	{
-		//		ShowHideCoursor();
-		//	}
-
 	}
 	void GroundCheck()
 	{
@@ -121,22 +107,17 @@ public class PlayerController : MonoBehaviour
 
 		if (isGrounded)
 		{
-			Vector3 targetVelocity = worldspaceMoveInput * maxSpeedOnGround * speedModifier * surface.Friction;
-			targetVelocity = GetDirectionReorientedOnSlope(targetVelocity.normalized, groundNormal) * targetVelocity.magnitude;
-			characterVelocity = Vector3.Lerp(characterVelocity, targetVelocity, movementSharpnessOnGround * Time.deltaTime);
 			
+				Vector3 targetVelocity = worldspaceMoveInput * maxSpeedOnGround / surface.Slowing;
+				targetVelocity = GetDirectionReorientedOnSlope(targetVelocity.normalized, groundNormal) * targetVelocity.magnitude;
+				characterVelocity = Vector3.Lerp(characterVelocity, targetVelocity, surface.SharpnessOnGround * Time.deltaTime);
+
 			if (Vector3.Angle(transform.up, groundNormal) >= surface.SlipAngle)
 			{
-				float angleRatio = surface.SlipAngle / Vector3.Angle(transform.up, groundNormal);
-				
-				characterVelocity += worldspaceMoveInput * speedModifier * angleRatio * surface.Friction * Time.deltaTime;
-				float verticalVelocity = characterVelocity.y;
-				Vector3 horizontalVelocity = Vector3.ProjectOnPlane(characterVelocity, Vector3.up);
-				horizontalVelocity = Vector3.ClampMagnitude(horizontalVelocity, maxSpeedInAir * speedModifier);
-				characterVelocity = horizontalVelocity + (Vector3.up * verticalVelocity);
-				characterVelocity += Vector3.down * gravityDownForce * Time.deltaTime;
+				Vector3 gravitation = Vector3.down * gravityDownForce * maxSpeedOnGround * Time.deltaTime;    //Player  doesnt accelerate for more predictable behavior
+				characterVelocity += Vector3.ProjectOnPlane(gravitation,groundNormal);
 			}
-		} 
+		}
 		else
 		{
 			characterVelocity += worldspaceMoveInput * accelerationSpeedInAir * Time.deltaTime;
@@ -178,6 +159,28 @@ public class PlayerController : MonoBehaviour
 	bool IsNormalUnderSlopeLimit(Vector3 normal)
 	{
 		return Vector3.Angle(transform.up, normal) <= controller.slopeLimit;
+	}
+	private void OnTriggerStay(Collider other)
+	{
+		if (other.gameObject.layer == 7) //SnowBall layer
+		{
+			Rigidbody SnowballRigidbody = other.transform.GetComponent<Rigidbody>();
+			SnowballVelocity = SnowballRigidbody.velocity;
+			//Search angle betwwen snowball velocity vector and vector from snowball to player 
+			float angle = Vector3.Angle(Vector3.ProjectOnPlane(SnowballVelocity, Vector3.up),
+				Vector3.ProjectOnPlane(transform.position - other.transform.position, Vector3.up));
+			if (angle <= 30f)
+			{
+				transform.parent = other.transform;
+				transform.localPosition = Vector3.zero;
+				controller.enabled = false;
+			}
+		}
+	}
+
+	private void Fall()
+	{
+
 	}
 
 	private void ShowHideCoursor()

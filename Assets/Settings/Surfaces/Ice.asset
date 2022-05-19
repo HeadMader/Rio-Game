@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 591486f465dff4947b08d99c24e25081, type: 3}
   m_Name: Ice
   m_EditorClassIdentifier: 
-  FloorType: 1
-  MaxSpeed: 1
-  Friction: 0.9
-  SlipAngle: 20
+  Slowing: 1
+  SlipAngle: 45
+  SharpnessOnGround: 1
